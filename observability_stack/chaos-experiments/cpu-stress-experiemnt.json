@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "title": "CPU Stress Test",
+  "description": "Test application behavior under high CPU load",
+  "steady-state-hypothesis": {
+    "title": "CPU usage should be manageable",
+    "probes": [
+      {
+        "name": "cpu-usage-check",
+        "type": "probe",
+        "provider": {
+          "type": "prometheus",
+          "module": "chaosprometheus.prometheus",
+          "func": "query",
+          "arguments": {
+            "query": "avg(rate(container_cpu_usage_seconds_total[5m])) by (pod)",
+            "url": "http://prometheus-server.monitoring.svc.cluster.local:9090"
+          }
+        },
+        "tolerance": {
+          "type": "range",
+          "range": [0, 0.8]
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "stress-cpu",
+      "provider": {
+        "type": "python",
+        "module": "chaoslib.process",
+        "func": "run_command",
+        "arguments": {
+          "command": "stress --cpu 2 --timeout 120s",
+          "timeout": 130
+        }
+      }
+    }
+  ]
+}

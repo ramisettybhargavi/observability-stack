@@ -1,0 +1,42 @@
+# k8s/logging/kibana-values.yaml
+
+elasticsearchHosts: "http://elasticsearch:9200"
+
+replicas: 2
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"
+
+service:
+  type: ClusterIP
+  port: 5601
+  annotations: {}
+
+kibanaConfig:
+  kibana.yml: |
+    server.name: kibana
+    server.host: 0.0.0.0
+    elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+    monitoring.ui.container.elasticsearch.enabled: true
+    xpack.security.enabled: false
+    xpack.monitoring.enabled: true
+    xpack.apm.ui.enabled: true
+
+persistence:
+  enabled: true
+  storageClassName: gp3
+  size: 20Gi
+
+readinessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 3
+  timeoutSeconds: 5
+livenessProbe:
+  failureThreshold: 3   

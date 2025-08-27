@@ -1,0 +1,78 @@
+# k8s/tracing/jaeger-values.yaml
+
+provisionDataStore:
+  cassandra: false
+  elasticsearch: true
+
+storage:
+  type: elasticsearch
+  elasticsearch:
+    host: elasticsearch.logging.svc.cluster.local
+    port: 9200
+    scheme: http
+    nodesWanOnly: false
+    extraEnv: []
+    usePassword: false
+    user: elastic
+    password: changeme
+  
+query:
+  enabled: true
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 16686
+  ingress:
+    enabled: false
+  resources:
+    requests:
+      cpu: 256m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    - name: SPAN_STORAGE_TYPE
+      value: elasticsearch
+
+collector:
+  enabled: true
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    grpc:
+      port: 14250
+    http:
+      port: 14268
+    zipkin:
+      port: 9411
+    otlp:
+      grpc:
+        port: 4317
+      http:
+        port: 4318
+  resources:
+    requests:
+      cpu: 256m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    - name: SPAN_STORAGE_TYPE
+      value: elasticsearch
+
+agent:
+  enabled: false
+
+esIndexCleaner:
+  enabled: true
+  numberOfDays: 7
+  schedule: "55 23 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+esRollover:
+  enabled: true
+  schedule: "10 0 * * *"
+  conditions: '{"max_age": "1d"}'

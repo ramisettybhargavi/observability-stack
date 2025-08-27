@@ -1,0 +1,53 @@
+# k8s/logging/elasticsearch-values.yaml
+
+# Elasticsearch configuration
+replicas: 3
+minimumMasterNodes: 2
+
+esConfig:
+  elasticsearch.yml: |
+    cluster.name: "observability-cluster"
+    network.host: 0.0.0.0
+    discovery.seed_hosts: "elasticsearch-master-headless"
+    cluster.initial_master_nodes: "elasticsearch-master-0,elasticsearch-master-1,elasticsearch-master-2"
+    cluster.max_shards_per_node: 1000
+
+volumeClaimTemplate:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 100Gi
+
+resources:
+  requests:
+    cpu: "1000m"
+    memory: "2Gi"
+  limits:
+    cpu: "2000m"
+    memory: "4Gi"
+
+esJavaOpts: "-Xmx2g -Xms2g"
+
+persistence:
+  enabled: true
+
+nodeGroup: "master"
+
+roles:
+  master: "true"
+  ingest: "true"
+  data: "true"
+  remote_cluster_client: "true"
+  ml: "false"
+
+service:
+  annotations: {}
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9200
+      protocol: TCP
+    - name: transport
+      port: 9300
+      protocol: TCP

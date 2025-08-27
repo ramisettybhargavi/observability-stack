@@ -1,0 +1,81 @@
+{
+  "version": "1.0.0",
+  "title": "System Resilience to Pod Failures",
+  "description": "Can the system survive random pod failures?",
+  "configuration": {
+    "app_name": { "type": "env", "key": "APP_NAME" },
+    "namespace": { "type": "env", "key": "NAMESPACE" }
+  },
+  "steady-state-hypothesis": {
+    "title": "Application must be up and healthy",
+    "probes": [
+      {
+        "name": "check-python-service-health",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "http://python-service:5000/health",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.status",
+          "expect": "healthy"
+        }
+      },
+      {
+        "name": "check-nodejs-service-health",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "http://nodejs-service:3000/health",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.status",
+          "expect": "healthy"
+        }
+      },
+      {
+        "name": "check-java-service-health",
+        "type": "probe",
+        "provider": {
+          "type": "http",
+          "url": "http://java-service:8080/api/health",
+          "method": "GET",
+          "timeout": 5
+        },
+        "tolerance": {
+          "type": "jsonpath",
+          "path": "$.status",
+          "expect": "healthy"
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "terminate-random-pod",
+      "provider": {
+        "type": "python",
+        "module": "chaosk8s.pod.actions",
+        "func": "terminate_pods",
+        "arguments": {
+          "label_selector": "app in (python-service,nodejs-service,java-service)",
+          "ns": "default",
+          "rand": true,
+          "mode": "fixed",
+          "qty": 1
+        }
+      },
+      "pauses": {
+        "after": 30
+      }
+    }
+  ],
+  "rollbacks": []
+}

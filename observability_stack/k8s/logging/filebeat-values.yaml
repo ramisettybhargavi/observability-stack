@@ -1,0 +1,103 @@
+# k8s/logging/filebeat-values.yaml
+
+daemonset:
+  enabled: true
+
+deployment:
+  enabled: false
+
+filebeatConfig:
+  filebeat.yml: |
+    filebeat.inputs:
+    - type: container
+      paths:
+        - /var/log/containers/*.log
+      processors:
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
+      - drop_event:
+          when:
+            equals:
+              kubernetes.container.name: "filebeat"
+
+    output.elasticsearch:
+      hosts: ["elasticsearch:9200"]
+      indices:
+        - index: "filebeat-application-%{+yyyy.MM.dd}"
+          when.contains:
+            kubernetes.labels.component: "application"
+        - index: "filebeat-system-%{+yyyy.MM.dd}"
+          when.contains:
+            kubernetes.namespace: "kube-system"
+        - index: "filebeat-monitoring-%{+yyyy.MM.dd}"
+          when.contains:
+            kubernetes.namespace: "monitoring"
+        - index: "filebeat-%{+yyyy.MM.dd}"
+
+    setup.template.settings:
+      index.number_of_shards: 1
+      index.codec: best_compression
+      _source.enabled: true
+      index.number_of_replicas: 1
+      index.max_result_window: 50000
+
+    setup.ilm.enabled: true
+    setup.ilm.rollover_alias: "filebeat"
+    setup.ilm.pattern: "filebeat-*"
+    setup.ilm.policy: |
+      {
+        "policy": {
+          "phases": {
+            "hot": {
+              "actions": {
+                "rollover": {
+                  "max_size": "5GB",
+                  "max_age": "1d"
+                }
+              }
+            },
+            "warm": {
+              "min_age": "7d",
+              "actions": {
+                "allocate": {
+                  "number_of_replicas": 0
+                }
+              }
+            },
+            "delete": {
+              "min_age": "30d"
+            }
+          }
+        }
+      }
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "100Mi"
+  limits:
+    cpu: "200m"
+    memory: "200Mi"
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+
+extraVolumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+
+extraVolumeMounts:
+  - name: varlog
+    mountPath: /var/log
+    readOnly: true
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true

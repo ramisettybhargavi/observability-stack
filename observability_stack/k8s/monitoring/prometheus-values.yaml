@@ -1,0 +1,158 @@
+# k8s/monitoring/prometheus-values.yaml
+
+kube-prometheus-stack:
+  prometheusOperator:
+    enabled: true
+    admissionWebhooks:
+      enabled: true
+
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      replicas: 2
+      retention: 30d
+      retentionSize: 50GB
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp3
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 100Gi
+      resources:
+        requests:
+          memory: 2Gi
+          cpu: 1000m
+        limits:
+          memory: 4Gi
+          cpu: 2000m
+      additionalScrapeConfigs:
+        - job_name: 'microservices'
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+              action: keep
+              regex: true
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+              action: replace
+              target_label: __metrics_path__
+              regex: (.+)
+            - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+              action: replace
+              regex: '([^:]+)(?::\d+)?;(\d+)'
+              replacement: $1:$2
+              target_label: __address__
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      replicas: 2
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp3
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 200m
+    config:
+      global:
+        smtp_smarthost: 'localhost:587'
+        smtp_from: 'alertmanager@yourdomain.com'
+      route:
+        group_by: ['alertname', 'cluster', 'service']
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 1h
+        receiver: web.hook
+        routes:
+          - match:
+              alertname: DeadMansSwitch
+            receiver: deadmansswitch
+          - match:
+              severity: critical
+            receiver: critical-alerts
+      receivers:
+        - name: web.hook
+          webhook_configs:
+            - url: 'http://slack-webhook-service:3000/webhook'
+        - name: deadmansswitch
+          webhook_configs:
+            - url: 'http://deadmansswitch-webhook:3000/webhook'
+        - name: critical-alerts
+          slack_configs:
+            - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+              channel: '#alerts'
+              title: 'Critical Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+              text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  grafana:
+    enabled: true
+    replicas: 2
+    persistence:
+      enabled: true
+      storageClassName: gp3
+      size: 20Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 200m
+    adminPassword: "admin"
+    grafana.ini:
+      server:
+        root_url: "http://grafana.yourdomain.com"
+      security:
+        admin_user: admin
+        admin_password: admin
+      auth:
+        disable_login_form: false
+      auth.anonymous:
+        enabled: true
+        org_role: Viewer
+      dashboards:
+        default_home_dashboard_path: /var/lib/grafana/dashboards/kubernetes-cluster-dashboard.json
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://prometheus-kube-prometheus-prometheus:9090
+            access: proxy
+            isDefault: true
+          - name: Jaeger
+            type: jaeger
+            url: http://jaeger-query:16686
+            access: proxy
+          - name: Elasticsearch
+            type: elasticsearch
+            url: http://elasticsearch:9200
+            access: proxy
+            database: "logstash-*"
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: 'default'
+            orgId: 1
+            folder: ''
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards
