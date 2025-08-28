@@ -19,12 +19,15 @@ terraform {
     }
   }
 
-  # Uncomment and configure for remote state
-  # backend "s3" {
-  #   bucket = "your-terraform-state-bucket"
-  #   key    = "observability/terraform.tfstate"
-  #   region = "us-west-2"
-  # }
+backend "s3" {
+    bucket         = "observability-eks-tf-bucket"
+    key            = "observability/terraform.tfstate"
+    region         = "us-west-2"
+    encrypt        = true
+    kms_key_id     = "arn:aws:kms:us-west-2:123456789012:key/abcd-efgh-ijkl"
+    dynamodb_table = "terraform-state-lock"
+    acl            = "bucket-owner-full-control"
+  }
 }
 
 provider "aws" {
@@ -97,4 +100,5 @@ module "eks" {
   node_max_capacity        = var.node_max_capacity
   node_min_capacity        = var.node_min_capacity
 }
+
 
