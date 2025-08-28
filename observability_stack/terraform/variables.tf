@@ -31,7 +31,7 @@ variable "environment" {
 variable "node_instance_types" {
   description = "Instance types for EKS node groups"
   type        = list(string)
-  default     = ["m5.large", "m5.xlarge"]
+  default     = ["t3.medium","t3.medium"]
 }
 
 variable "node_desired_capacity" {
@@ -43,7 +43,7 @@ variable "node_desired_capacity" {
 variable "node_max_capacity" {
   description = "Maximum capacity for EKS node group"
   type        = number
-  default     = 10
+  default     = 3
 }
 
 variable "node_min_capacity" {
@@ -51,3 +51,4 @@ variable "node_min_capacity" {
   type        = number
   default     = 1
 }
+
