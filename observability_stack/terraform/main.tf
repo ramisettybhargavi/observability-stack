@@ -1,43 +1,4 @@
-# Get availability zones
-data "aws_availability_zones" "available" {
-  filter {
-    name   = "opt-in-status"
-    values = ["opt-in-not-required"]
-  }
-}
 
-# Create S3 bucket for Terraform state (optional - if using remote state)
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "${var.cluster_name}-terraform-state-${random_string.suffix.result}"
-  
-  tags = {
-    Name        = "${var.cluster_name}-terraform-state"
-    Environment = var.environment
-  }
-}
-
-resource "random_string" "suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
-
-resource "aws_s3_bucket_versioning" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
 
 # VPC Module
 module "vpc" {
@@ -74,3 +35,4 @@ module "eks" {
   node_max_capacity         = var.node_max_capacity
   node_min_capacity         = var.node_min_capacity
 }
+
