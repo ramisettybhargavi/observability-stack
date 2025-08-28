@@ -1,14 +1,4 @@
 
-backend "s3" {
-    bucket         = "observability-eks-tf-bucket"
-    key            = "observability/terraform.tfstate"
-    region         = "us-west-2"
-    encrypt        = true
-    kms_key_id     = "arn:aws:kms:us-west-2:123456789012:key/abcd-efgh-ijkl"
-    dynamodb_table = "terraform-state-lock"
-    acl            = "bucket-owner-full-control"
-  }
-
 
 # S3 bucket for state
 resource "aws_s3" "tf_state"{
@@ -54,6 +44,7 @@ resource "aws_dynamodb_table" "tf_lock" {
     Environment = "production"
   }
 }
+
 
 
 
