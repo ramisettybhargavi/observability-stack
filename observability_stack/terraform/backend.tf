@@ -1,4 +1,5 @@
-  backend "s3" {
+terraform{
+backend "s3" {
     bucket         = "observability-eks-tf-bucket"
     key            = "observability/terraform.tfstate"
     region         = "us-west-2"
@@ -53,4 +54,5 @@ resource "aws_dynamodb_table" "tf_lock" {
     Environment = "production"
   }
 }
+
 
