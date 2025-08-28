@@ -24,4 +24,30 @@ variable "vpc_cidr" {
 
 variable "environment" {
   description = "Environment name"
-  type        = strin
+  type        = string
+  default     = "production"
+}
+
+variable "node_instance_types" {
+  description = "Instance types for EKS node groups"
+  type        = list(string)
+  default     = ["m5.large", "m5.xlarge"]
+}
+
+variable "node_desired_capacity" {
+  description = "Desired capacity for EKS node group"
+  type        = number
+  default     = 3
+}
+
+variable "node_max_capacity" {
+  description = "Maximum capacity for EKS node group"
+  type        = number
+  default     = 10
+}
+
+variable "node_min_capacity" {
+  description = "Minimum capacity for EKS node group"
+  type        = number
+  default     = 1
+}
