@@ -1,19 +1,19 @@
 variable "cluster_name" {
-  description = "Name of the EKS cluster"
   type        = string
+  description = "Name of the EKS cluster"
 }
 
 variable "vpc_cidr" {
-  description = "CIDR block for VPC"
   type        = string
+  description = "CIDR block for the VPC"
 }
 
 variable "environment" {
-  description = "Environment name"
   type        = string
+  description = "Deployment environment"
 }
 
 variable "azs" {
-  description = "Availability zones"
   type        = list(string)
+  description = "List of availability zones"
 }
