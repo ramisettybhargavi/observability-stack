@@ -1,4 +1,4 @@
-terraform{
+
 backend "s3" {
     bucket         = "observability-eks-tf-bucket"
     key            = "observability/terraform.tfstate"
@@ -8,7 +8,7 @@ backend "s3" {
     dynamodb_table = "terraform-state-lock"
     acl            = "bucket-owner-full-control"
   }
-}
+
 
 # S3 bucket for state
 resource "aws_s3" "tf_state"{
@@ -54,5 +54,6 @@ resource "aws_dynamodb_table" "tf_lock" {
     Environment = "production"
   }
 }
+
 
 
