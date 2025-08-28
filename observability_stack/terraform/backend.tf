@@ -1,21 +1,3 @@
-terraform {
-  required_version = ">= 1.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.20"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 2.10"
-    }
-  }
-
   backend "s3" {
     bucket         = "observability-eks-tf-bucket"
     key            = "observability/terraform.tfstate"
@@ -71,3 +53,4 @@ resource "aws_dynamodb_table" "tf_lock" {
     Environment = "production"
   }
 }
+
